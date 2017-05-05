@@ -5,7 +5,9 @@
   "main": "index.js",
   "dependencies": {
     "axios": "^0.16.1",
+    "bluebird": "^3.5.0",
     "chai": "^3.5.0",
+    "kafka-node": "^1.6.1",
     "mocha": "^3.3.0"
   },
   "devDependencies": {
@@ -13,9 +15,9 @@
     "express": "^4.15.2"
   },
   "scripts": {
-    "build": "npm i -a",
     "selftestserver": "cross-env IP=localhost PORT=80 node server",
-    "selftest": "cross-env NODE_ENV=selftest mocha index.js"
+    "selftest": "cross-env NODE_ENV=selftest mocha index.js",
+    "start": "cross-env NODE_ENV=production mocha index.js"
   },
   "author": "Yaguang Zhang",
   "license": "Apache-2.0"
