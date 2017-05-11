@@ -2,22 +2,22 @@
   "name": "oada-srvc-tests",
   "version": "1.0.0",
   "description": "Generate dummy messages to test different oada-srvc micro services.",
-  "main": "index.js",
+  "main": "",
   "dependencies": {
     "axios": "^0.16.1",
     "bluebird": "^3.5.0",
     "chai": "^3.5.0",
     "kafka-node": "^1.6.1",
     "mocha": "^3.3.0",
-    "validator": "^7.0.0"
+    "validator": "^7.0.0",
+    "cross-env": "^4.0.0"
   },
   "devDependencies": {
-    "cross-env": "^4.0.0",
     "express": "^4.15.2"
   },
   "scripts": {
     "selftestserver": "cross-env IP=localhost PORT=80 node server",
-    "selftest": "cross-env NODE_ENV=selftest NODE_ENV_DEBUG=true mocha index.js",
+    "selftest": "cross-env NODE_ENV=selftest NODE_ENV_DEBUG=true mocha invalidTokenValidUrl.js",
     "debugInvalidTokenValidUrl": "cross-env NODE_ENV=production NODE_ENV_DEBUG=true mocha invalidTokenValidUrl.js",
     "debugValidTokenValidUrl": "cross-env NODE_ENV=production NODE_ENV_DEBUG=true mocha invalidTokenValidUrl.js",
     "start": "cross-env NODE_ENV=production mocha invalidTokenValidUrl.js && mocha validTokenValidUrl.js"
