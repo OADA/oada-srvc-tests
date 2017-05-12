@@ -20,7 +20,6 @@ const Promise = require('bluebird');
 const isSelfTesting = process.env.NODE_ENV === 'selftest';
 
 if (isSelfTesting) {
-  // TODO: make sure this token is invalid.
   const FOO_INVALID_TOKEN = 'foo-invalid-token-tests';
 
   describe('SelfTest', () => {

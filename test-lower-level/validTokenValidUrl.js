@@ -1,8 +1,8 @@
 'use strict'
 
 /*
-  Testing script 1:
-    - The scenario for invalid token + valid URL.
+  Testing script 2:
+    - The scenario for valid token + valid URL.
  */
 
 // const config = require('../config');
@@ -16,6 +16,7 @@ const debugMark = " => ";
 
 const expect = require('chai').expect;
 const axios = require('axios');
+//const cookie = require('cookie-machine');
 const kf = require('kafka-node');
 const Promise = require('bluebird');
 const validator = require('validator');
@@ -31,14 +32,14 @@ let setDatabaseP = oadaLib.init.run()
   });
 
 // Real tests.
-info(debugMark + 'Starting tests... (for invalidTokenValidUrl)');
-const FOO_INVALID_TOKEN = 'fooInvalidToken-tests';
+info(debugMark + 'Starting tests... (for validTokenValidUrl)');
+const VALID_TOKEN = 'xyz';
 
-const tokenToUse = FOO_INVALID_TOKEN;
+const tokenToUse = VALID_TOKEN;
 const VALID_GET_REQ_URL = '/bookmarks/rocks/rocks-index/90j2klfdjss';
 let url = 'http://proxy' + VALID_GET_REQ_URL;
 
-describe('Invalid Token with Valid URL', () => {
+describe('Valid Token with Valid URL', () => {
   // Get the Kafka consumers ready.
   const cs_token_req = new kf.ConsumerGroup({
     host: 'zookeeper:2181',
@@ -54,7 +55,13 @@ describe('Invalid Token with Valid URL', () => {
     fromOffset: 'earliest', // earliest | latest
     sessionTimeout: 15000,
   }, ['http_response']);
-
+  const cs_graph_req = new kf.ConsumerGroup({
+    host: 'zookeeper:2181',
+    groupId: 'consume-group-tester-http-handler-graph-request',
+    protocol: ['roundrobin'],
+    fromOffset: 'earliest', // earliest | latest
+    sessionTimeout: 15000,
+  }, ['graph_request']);
   //--------------------------------------------------
   // Task 1 - HTTP-Handler: HTTP response + token_request
   //--------------------------------------------------
@@ -66,11 +73,18 @@ describe('Invalid Token with Valid URL', () => {
   //--------------------------------------------------
   // Task 2 - Token-Lookup:  http-response - token
   //--------------------------------------------------
-  // Monitor and check the token message in the http-response.
+  // Monitor and check the token message of http-response.
   let http_response_str = null,
     http_response = null,
     http_response_partition = null,
     doc = null;
+
+  //--------------------------------------------------
+  // Task 3 - HTTP-Handler: graph_request
+  //--------------------------------------------------
+  // Monitor and check the Kafka message of graph-request.
+  let graph_request_str = null,
+    graph_request = null;
 
   before((done) => {
     cs_token_req.on('message', msg => {
@@ -93,6 +107,16 @@ describe('Invalid Token with Valid URL', () => {
       http_response = JSON.parse(http_response_str);
       http_response_partition = msg.partition;
       doc = http_response.doc;
+    });
+
+    cs_graph_req.on('message', msg => {
+      // To make sure only one message is consumed.
+      cs_http_res.close();
+
+      trace('Kafka cs_graph_req message = ' + JSON.stringify(msg) +
+        ', key = ' + msg.key.toString());
+      cs_graph_req_str = msg.value;
+      cs_graph_req = JSON.parse(http_response_str);
 
       done();
     });
@@ -144,6 +168,27 @@ describe('Invalid Token with Valid URL', () => {
         expect(validator.isUUID(token_request.connection_id)).to.be.true;
       });
     });
+
+    // Tests for task 3.
+    describe('graph_request Kafka msg', () => {
+      it('should be a non-empty string', () => {
+        trace("graph_request_str:" + graph_request_str);
+        expect(graph_request_str).to.be.a('String').that.is.not.empty;
+      });
+      it('should have an integer resp_partition', () => {
+        expect(graph_request).to.have.property('resp_partition')
+          .that.is.a('number');
+      });
+      it('should indicate the correct URL', () => {
+        expect(graph_request).to.have.property('url')
+          .that.equals(VALID_GET_REQ_URL);
+      });
+      it('should have a valid UUID connection id string', () => {
+        expect(graph_request).to.have.property('connection_id')
+          .that.is.a('String');
+        expect(validator.isUUID(graph_request.connection_id)).to.be.true;
+      });
+    });
   });
 
   // Tests for task 2.
@@ -157,9 +202,9 @@ describe('Invalid Token with Valid URL', () => {
         expect(http_response_str).to.contain('token');
         expect(http_response.token).to.equal(`Bearer ${tokenToUse}`);
       });
-      it('should indicate the token is invalid', () => {
+      it('should indicate the token is valid', () => {
         expect(http_response).to.have.property('token_exists')
-          .that.is.false;
+          .that.is.true;
       });
       // it('should not repeat resp_partition or partition in the response', () => {
       //   expect(http_response).to.not.have.property('partition');
@@ -181,28 +226,31 @@ describe('Invalid Token with Valid URL', () => {
 
     // More for task 2.
     describe('"doc" from the http_response_str Kafka msg', () => {
-      it('should have a null userid', () => {
+      it('should have a non-empty string userid', () => {
         expect(doc).to.have.property('userid')
-          .that.is.null;
-      });
-      it('should have a null clientid', () => {
-        expect(doc).to.have.property('clientid')
-          .that.is.null;
-      });
-      it('should have a null bookmarksid', () => {
-        expect(doc).to.have.property('bookmarksid')
-          .that.is.null;
-      });
-      it('should have an empty scope string', () => {
-        expect(doc).to.have.property('scope')
           .that.is.a('String')
-          // Because the token is invalid, the scope string should be empty.
-          .that.is.empty;
+          .that.is.not.empty;
+      });
+      it('should have a non-empty string clientid', () => {
+        expect(doc).to.have.property('clientid')
+          .that.is.a('String')
+          .that.is.not.empty;
+      });
+      it('should have a non-empty string bookmarksid', () => {
+        expect(doc).to.have.property('bookmarksid')
+          .that.is.a('String')
+          .that.is.not.empty;
+      });
+      it('should have a scope string (possibly empty)', () => {
+        expect(doc).to.have.property('scope')
+          .that.is.a('String');
       });
     });
   });
 
   after(() => {
+    info("config = " + config);
+    info("config.isTest = " + config.get("isTest"));
     return oadaLib.init.cleanup();
   });
 });

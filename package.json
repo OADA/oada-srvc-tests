@@ -10,6 +10,7 @@
     "debug": "^2.6.6",
     "kafka-node": "^1.6.1",
     "mocha": "^3.3.0",
+    "oada-lib-arangodb": "github:oada/oada-lib-arangodb",
     "validator": "^7.0.0"
   },
   "devDependencies": {
@@ -17,10 +18,8 @@
   },
   "scripts": {
     "selftestserver": "IP=localhost PORT=80 node server",
-    "selftest": "NODE_ENV=selftest DEBUG='*' mocha test/selftest.js",
-    "debugInvalidTokenValidUrl": "DEBUG='*' mocha test/invalidTokenValidUrl.js",
-    "debugValidTokenValidUrl": "DEBUG='*' mocha test/validTokenValidUrl.js",
-    "debug": "DEBUG='*' mocha",
+    "selftest": "NODE_ENV=selftest DEBUG='*' mocha selftest",
+    "debug": "DEBUG='tests:*' isTest=true mocha 'test-lower-level/*.js'",
     "start": "NODE_ENV=production mocha"
   },
   "author": "Yaguang Zhang",

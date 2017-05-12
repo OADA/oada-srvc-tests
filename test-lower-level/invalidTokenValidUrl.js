@@ -203,6 +203,8 @@ describe('Invalid Token with Valid URL', () => {
   });
 
   after(() => {
+    info("config = " + config);
+    info("config.isTest = " + config.get("isTest"));
     return oadaLib.init.cleanup();
   });
 });
