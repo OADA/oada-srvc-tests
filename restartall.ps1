@@ -36,7 +36,7 @@ Write-Host "================================"
 Write-Host "Git: pull stuff ..."
 Write-Host "================================"
 git pull
-git submodule update --remote --merge
+# git submodule update --remote --merge
 
 Write-Host
 Write-Host "================================"
@@ -55,6 +55,7 @@ Write-Host
 Write-Host "================================"
 Write-Host "docker-compose up -d ..."
 Write-Host "================================"
+$env:DEBUG = "*"
 docker-compose up --force-recreate -d
 
 Write-Host
